@@ -1,41 +1,45 @@
 version: '3.8'
 
 services:
-  db-container:
-    image: postgres:latest
-    container_name: soundtracker_database
-    restart: always
-    networks:
-      - movies-network
+  db:
+    image: postgres:15-alpine
+    container_name: soundtracker_db
+    restart: unless-stopped
     environment:
-        POSTGRES_USER: dbmsuser
-        POSTGRES_PASSWORD: 191688
-        POSTGRES_DB: movieservicebd
+      POSTGRES_USER: dbmsuser
+      POSTGRES_PASSWORD: 191688
+      POSTGRES_DB: movieservicebd
     volumes:
-      - /home/:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - soundtracker-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbmsuser"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: ./backend
-    image: kelbri/soundtracker_backend:0.0.1
+    image: soundtracker-backend:offline
     container_name: soundtracker_backend
-    restart: always
-    networks:
-      - movies-network
+    restart: unless-stopped
     depends_on:
-      - db-container
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mock
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/movieservicebd
+      SPRING_DATASOURCE_USERNAME: dbmsuser
+      SPRING_DATASOURCE_PASSWORD: 191688
     ports:
       - "8080:8080"
-  frontend:
-    build: ./angular-client
-    image: kelbri/soundtracker_frontend:0.0.1
-    container_name: soundtracker_frontend
-    restart: always
     networks:
-      - movies-network
-    ports:
-      - "8888:4200"
+      - soundtracker-net
+
+volumes:
+  db_data:
+
 networks:
-  movies-network:
+  soundtracker-net:
     driver: bridge

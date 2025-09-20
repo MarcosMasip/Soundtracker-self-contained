@@ -1,8 +1,41 @@
 # Soundtracker (fullstack application)
 
 The purpose of the project is to create a fullstack web application. Subject area -  music and films.<br>
-**[Spotify API](https://developer.spotify.com/)**<br>
-**[Kinopoisk API](https://kinopoisk.dev/)**<br>
+## Offline / Mock Mode
+
+This fork has been enhanced to be fully self-contained:
+
+Key properties:
+- No external API calls required in default `mock` profile.
+- Deterministic dataset seeded from classpath fixtures on first run.
+- Frontend bundles (Angular, React) can be embedded and served from the backend.
+- Two universal commands:
+	1. `./scripts/setup.sh` (or `scripts\setup.ps1` on Windows) – downloads/builds everything and embeds frontends.
+	2. `./scripts/start.sh` (or `scripts\start.ps1`) – starts via Docker if available, otherwise local H2 fallback.
+
+### Quick Start
+macOS / Linux:
+```
+./scripts/setup.sh
+./scripts/start.sh
+```
+
+Windows (PowerShell):
+```
+scripts\setup.ps1
+scripts\start.ps1
+```
+
+### Profiles
+- `mock` (default in Docker): Uses fixtures + Postgres container.
+- `local`: Same fixtures, uses embedded H2 (no Docker required).
+- `live`: Placeholder for future real external API integration.
+
+Add more fixture JSON files under `backend/src/main/resources/data/movies` and `.../data/music/albums` and restart to extend dataset.
+
+---
+
+**Original external references (Spotify / Kinopoisk) are now optional and not used in default mock mode.**
 
 | Stage                                | Description                                                                                                        | Expected (hours) | Actual (hours) |
 |--------------------------------------|--------------------------------------------------------------------------------------------------------------------|------------------|----------------|
