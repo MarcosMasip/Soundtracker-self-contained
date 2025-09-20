@@ -113,6 +113,7 @@ Behavior:
 2. Waits for health endpoint to become UP.
 3. Prints useful URLs.
 4. If Docker is not available or fails, falls back to in-process Spring Boot with H2 using profile `local`.
+ 5. A landing page is now served at `http://localhost:8080/` with quick links (Swagger, Angular, React, Health, H2 console).
 
 Sample output (Docker path):
 ```
@@ -149,6 +150,7 @@ Example (truncated) JSON you might see:
 Static frontend (if built by setup):
 - Angular: http://localhost:8080/app/angular/
 - React:   http://localhost:8080/app/react/
+ (If either returns 404, rebuild with: `bash scripts/setup.sh --force` – Angular output is flattened automatically; React needs a successful `npm run build`).
 
 ### 7. Prove offline capability
 1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.

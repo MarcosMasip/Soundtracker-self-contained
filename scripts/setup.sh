@@ -49,10 +49,29 @@ mkdir -p "$STATIC_DIR"
 if [[ -d "$ROOT_DIR/angular-client/dist" ]]; then
   # Find angular dist (could be project name subfolder)
   ANGULAR_DIST=$(find "$ROOT_DIR/angular-client/dist" -maxdepth 1 -type d -not -path '*/dist' | head -n 1)
-  [[ -n "$ANGULAR_DIST" ]] && rm -rf "$STATIC_DIR/angular" && cp -R "$ANGULAR_DIST" "$STATIC_DIR/angular"
+  if [[ -n "$ANGULAR_DIST" ]]; then
+    rm -rf "$STATIC_DIR/angular"
+    cp -R "$ANGULAR_DIST" "$STATIC_DIR/angular"
+    # Flatten Angular's 'browser' subfolder if present so index.html is at /app/angular/index.html
+    if [[ -d "$STATIC_DIR/angular/browser" && -f "$STATIC_DIR/angular/browser/index.html" ]]; then
+      echo "[setup] Flattening Angular 'browser' directory for simpler URL (/app/angular/)"
+      cp -R "$STATIC_DIR/angular/browser"/* "$STATIC_DIR/angular/"
+      # Keep original browser folder assets (optional); can remove to save space:
+      rm -rf "$STATIC_DIR/angular/browser"
+    fi
+  else
+    echo "[setup] WARNING: Could not locate Angular dist output"
+  fi
 fi
 if [[ -d "$ROOT_DIR/react-client/build" ]]; then
-  rm -rf "$STATIC_DIR/react" && cp -R "$ROOT_DIR/react-client/build" "$STATIC_DIR/react"
+  rm -rf "$STATIC_DIR/react"
+  cp -R "$ROOT_DIR/react-client/build" "$STATIC_DIR/react"
+  # React build should contain index.html; warn if missing
+  if [[ ! -f "$STATIC_DIR/react/index.html" ]]; then
+    echo "[setup] WARNING: React build missing index.html (build may have failed)"
+  fi
+else
+  echo "[setup] NOTE: React build folder not found; skipping embed (run npm run build in react-client)"
 fi
 
 echo "[setup] Creating signature marker"
