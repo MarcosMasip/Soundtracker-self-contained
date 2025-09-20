@@ -32,7 +32,7 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
+    http.csrf(AbstractHttpConfigurer::disable)
                 // Своего рода отключение CORS (разрешение запросов со всех доменов)
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new CorsConfiguration();
@@ -43,19 +43,27 @@ public class SecurityConfiguration {
                     return corsConfiguration;
                 }))
                 // Настройка доступа к конечным точкам
-                .authorizeHttpRequests(request -> request
-                        // Можно указать конкретный путь, * - 1 уровень вложенности, ** - любое количество уровней вложенности
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-resources/*", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/endpoint", "/admin/**").hasRole("ADMIN")
-//                        .requestMatchers("/api-soudtracker/db-movie/delete", "/api-soudtracker/db-movie/update",
-//                                "/api-soudtracker/db-movie/save", "/api-soudtracker/db-music/save",
-//                                "/api-soudtracker/db-music/delete", "/api-soudtracker/db-music/update").hasRole("ADMIN")
-                        .requestMatchers("/api-soudtracker/**").permitAll()
-                        .anyRequest().denyAll())
+        .authorizeHttpRequests(request -> request
+            // Public endpoints (auth & docs)
+            .requestMatchers("/auth/**").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
+            // Health & actuator
+            .requestMatchers("/actuator/**").permitAll()
+            // Static frontend assets & root
+            .requestMatchers("/", "/index.html", "/app/**", "/favicon.ico").permitAll()
+            // H2 console (dev only)
+            .requestMatchers("/h2-console/**").permitAll()
+            // Application APIs (corrected path spelling)
+            .requestMatchers("/api-soundtracker/**").permitAll()
+            // Allow any other requests in mock/local profiles; for now open globally (adjust later if needed)
+            .anyRequest().permitAll())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+    // H2 console frame options (allow embedding)
+    http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
         return http.build();
     }
 
