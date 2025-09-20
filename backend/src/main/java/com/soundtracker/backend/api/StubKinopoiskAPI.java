@@ -48,37 +48,3 @@ public class StubKinopoiskAPI extends KinopoiskAPIBase {
         return "{\"docs\":[]}";
     }
 }
-package com.soundtracker.backend.api;
-
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
-/**
- * Stub implementation used in offline profiles (mock, local) to avoid external HTTP calls.
- * Returns minimal JSON structures expected by downstream parsing logic.
- */
-@Component
-@Profile({"mock","local"})
-public class StubKinopoiskAPI extends KinopoiskAPIBase {
-
-    @Override
-    public String searchMovieById(Long id) {
-        // Return empty structure with docs array consistent with expected schema branches.
-        return "{\"id\": " + id + ", \"name\": \"Offline Stub Movie\", \"alternativeName\": \"Offline Stub\", \"year\": 1970, \"description\": \"Stub description offline\", \"movieLength\": 0, \"poster\": { \"url\": \"\" }, \"genres\": [], \"persons\": [], \"type\": \"movie\"}";
-    }
-
-    @Override
-    public String searchMovieByTitle(String title) {
-        return "{\"docs\":[{\"id\":999999,\"name\":\"" + title + "\",\"alternativeName\":\"\",\"year\":1970,\"description\":\"Stub description offline\",\"movieLength\":0,\"poster\":{\"url\":\"\"},\"genres\":[],\"persons\":[],\"type\":\"movie\"}]}";
-    }
-
-    @Override
-    public String searchScreenshotsByMovieId(Long id) {
-        return "{\"docs\":[]}";
-    }
-
-    @Override
-    public String searchFrameByMovieId(Long id) {
-        return "{\"docs\":[]}";
-    }
-}
