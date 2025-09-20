@@ -2,6 +2,7 @@ package com.soundtracker.backend.api;
 
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -11,7 +12,8 @@ import java.util.Objects;
  * Класс для взаимодействия с Spotify API
  */
 @Component
-public class SpotifyAPI {
+@Profile("live")
+public class SpotifyAPI extends SpotifyAPIBase {
 
     @Value("${spotify.client.secret}")
     String clientSecret;
@@ -57,12 +59,13 @@ public class SpotifyAPI {
      * @return строковое представление JSON найденного альбома
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public String getAlbumData(String albumId) throws IOException {
+    @Override
+    public String getAlbumData(String albumId) {
         if (accessToken == null) {
-            fetchAccessToken();
+            try { fetchAccessToken(); } catch (IOException e) { throw new RuntimeException(e); }
         }
         String url = API_URL + "/albums/" + albumId;
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     /**
@@ -72,12 +75,13 @@ public class SpotifyAPI {
      * @return строковое представление JSON списка треков альбома
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public String getAlbumTracks(String albumId) throws IOException {
+    @Override
+    public String getAlbumTracks(String albumId) {
         if (accessToken == null) {
-            fetchAccessToken();
+            try { fetchAccessToken(); } catch (IOException e) { throw new RuntimeException(e); }
         }
         String url = API_URL + "/albums/" + albumId + "/tracks?market=US&limit=40&offset=0";
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     /**
@@ -87,12 +91,13 @@ public class SpotifyAPI {
      * @return строковое представление JSON найденного альбома
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public String searchAlbumByName(String albumName) throws IOException {
+    @Override
+    public String searchAlbumByName(String albumName) {
         if (accessToken == null) {
-            fetchAccessToken();
+            try { fetchAccessToken(); } catch (IOException e) { throw new RuntimeException(e); }
         }
         String url = API_URL + "/search?q=" + albumName + "&type=album&limit=1&offset=0";
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     /**

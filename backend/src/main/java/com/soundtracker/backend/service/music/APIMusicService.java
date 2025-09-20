@@ -2,7 +2,7 @@ package com.soundtracker.backend.service.music;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.soundtracker.backend.api.SpotifyAPI;
+import com.soundtracker.backend.api.SpotifyAPIBase;
 import com.soundtracker.backend.model.music.Album;
 import com.soundtracker.backend.model.music.Track;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class APIMusicService {
 
-    private final SpotifyAPI spotifyAPI;
+    private final SpotifyAPIBase spotifyAPI;
     private final ObjectMapper objectMapper;
 
     /**
@@ -29,8 +29,12 @@ public class APIMusicService {
      * @return строковое представление JSON найденного альбома
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public String searchAlbumByName(String albumName) throws IOException {
-        return spotifyAPI.searchAlbumByName(albumName);
+    public String searchAlbumByName(String albumName) {
+        try {
+            return spotifyAPI.searchAlbumByName(albumName);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to search album by name", e);
+        }
     }
 
     /**
@@ -40,12 +44,17 @@ public class APIMusicService {
      * @return объект Album, содержащий информацию об альбоме
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public Album getAlbumByName(String albumName) throws IOException {
+    public Album getAlbumByName(String albumName) {
         String responseBody = searchAlbumByName(albumName);
         if (responseBody.isEmpty()) {
             return null;
         }
-        JsonNode jsonNode = objectMapper.readTree(responseBody);
+        JsonNode jsonNode;
+        try {
+            jsonNode = objectMapper.readTree(responseBody);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse album by name response", e);
+        }
         jsonNode = jsonNode.get("albums").get("items").get(0);
         Album album = new Album();
         album.setId(jsonNode.get("id").asText());
@@ -66,9 +75,19 @@ public class APIMusicService {
      * @return множество объектов Track, содержащих информацию о треках альбома
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public Set<Track> getAlbumTracks(String albumID) throws IOException {
-        String responseBody = spotifyAPI.getAlbumTracks(albumID);
-        JsonNode jsonNode = objectMapper.readTree(responseBody);
+    public Set<Track> getAlbumTracks(String albumID) {
+        String responseBody;
+        try {
+            responseBody = spotifyAPI.getAlbumTracks(albumID);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get album tracks", e);
+        }
+        JsonNode jsonNode;
+        try {
+            jsonNode = objectMapper.readTree(responseBody);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse album tracks response", e);
+        }
         Set<Track> tracks = new HashSet<>();
         for (JsonNode trackNode : jsonNode.get("items")) {
             Track track = new Track();

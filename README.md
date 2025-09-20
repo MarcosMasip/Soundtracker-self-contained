@@ -207,6 +207,7 @@ Albums association:
 | First run offline fails (dependency not found) | Dependencies not cached yet | Run `setup` once while online |
 | Node build OOM / slow | Low RAM / many parallel processes | Re-run with `npm install --no-audit`; close other apps; optionally skip frontend build if not needed |
 | Changed fixture not reflected | Old row persisted | Delete row from DB or wipe volume (see Cleanup & Reset) then restart |
+| InvalidConfigDataPropertyException referencing spring.profiles.active | `spring.profiles.active` declared inside `application-<profile>.properties` | Remove that line; activate profile via `SPRING_PROFILES_ACTIVE` env or command arg only |
 
 ## Cleanup & Reset
 Docker path (remove containers & volumes):

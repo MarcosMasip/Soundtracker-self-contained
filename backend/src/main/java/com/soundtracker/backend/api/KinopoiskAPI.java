@@ -3,6 +3,7 @@ package com.soundtracker.backend.api;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -12,7 +13,8 @@ import java.util.Objects;
  * Класс для взаимодействия с Kinopoisk API
  */
 @Component
-public class KinopoiskAPI {
+@Profile("live")
+public class KinopoiskAPI extends KinopoiskAPIBase {
 
     @Value(value = "${kinopoisk.apiKey}")
     String apiKey;
@@ -51,9 +53,10 @@ public class KinopoiskAPI {
      * @return ответ от сервера в формате JSON с данными о кино
      * @throws IOException если возникают проблемы при выполнении запроса
      */
-    public String searchMovieById(Long id) throws IOException {
+    @Override
+    public String searchMovieById(Long id) {
         String url = API_URL + "movie/" + id;
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     /**
@@ -63,9 +66,10 @@ public class KinopoiskAPI {
      * @return ответ от сервера в формате JSON с данными о найденном кино
      * @throws IOException если возникают проблемы при выполнении запроса
      */
-    public String searchMovieByTitle(String title) throws IOException {
+    @Override
+    public String searchMovieByTitle(String title) {
         String url = API_URL + "movie/search?page=1&limit=1&query=" + title;
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
     /**
@@ -75,19 +79,21 @@ public class KinopoiskAPI {
      * @return ответ от сервера в формате JSON с данными о кино
      * @throws IOException если возникают проблемы при выполнении запроса
      */
-    public String searchScreenshotsByMovieId(Long id) throws IOException {
+    @Override
+    public String searchScreenshotsByMovieId(Long id) {
         String url = API_URL + "image?page=1&limit=40&selectFields=movieId" +
                 "&selectFields=url&selectFields=height&selectFields=width" +
                 "&notNullFields=movieId&notNullFields=url" +
                 "&notNullFields=height&notNullFields=width&movieId=" + id + "&type=screenshot";
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 
-    public String searchFrameByMovieId(Long id) throws IOException {
+    @Override
+    public String searchFrameByMovieId(Long id) {
         String url = API_URL + "image?page=1&limit=40&selectFields=movieId" +
                 "&selectFields=url&selectFields=height&selectFields=width" +
                 "&notNullFields=movieId&notNullFields=url" +
                 "&movieId=" + id + "&type=frame";
-        return makeRequest(url);
+        try { return makeRequest(url); } catch (IOException e) { throw new RuntimeException(e); }
     }
 }

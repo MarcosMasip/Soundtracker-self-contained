@@ -3,13 +3,12 @@ package com.soundtracker.backend.service.movie;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.soundtracker.backend.api.KinopoiskAPI;
+import com.soundtracker.backend.api.KinopoiskAPIBase;
 import com.soundtracker.backend.model.movie.*;
 import com.soundtracker.backend.repository.movie.GenreRepository;
 import com.soundtracker.backend.repository.movie.MovieTypeRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -20,12 +19,12 @@ import java.util.Set;
 @Service
 public class APIMovieService {
 
-    private final KinopoiskAPI kinopoiskAPI;
+    private final KinopoiskAPIBase kinopoiskAPI;
     private final GenreRepository genreRepository;
     private final MovieTypeRepository movieTypeRepository;
     private final ObjectMapper objectMapper;
 
-    public APIMovieService(KinopoiskAPI kinopoiskAPI, GenreRepository genreRepository, MovieTypeRepository movieTypeRepository, ObjectMapper objectMapper) {
+    public APIMovieService(KinopoiskAPIBase kinopoiskAPI, GenreRepository genreRepository, MovieTypeRepository movieTypeRepository, ObjectMapper objectMapper) {
         this.kinopoiskAPI = kinopoiskAPI;
         this.genreRepository = genreRepository;
         this.movieTypeRepository = movieTypeRepository;
@@ -39,16 +38,17 @@ public class APIMovieService {
      * @return объект Movie, содержащий данные о кино
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public Movie searchMovieByTitle(String title) throws IOException {
-        String responseBody = kinopoiskAPI.searchMovieByTitle(title);
-        JsonNode jsonNode = objectMapper.readTree(responseBody);
-        jsonNode = jsonNode.get("docs").get(0);
-
-        Movie movie = getMovieDetailsFromJson(jsonNode);
-        movie.setGenres(getGenresFromJson(jsonNode));
-        movie.setType(getMovieTypeFromJson(jsonNode));
-
-        return movie;
+    public Movie searchMovieByTitle(String title) {
+        try {
+            String responseBody = kinopoiskAPI.searchMovieByTitle(title);
+            JsonNode jsonNode = objectMapper.readTree(responseBody).get("docs").get(0);
+            Movie movie = getMovieDetailsFromJson(jsonNode);
+            movie.setGenres(getGenresFromJson(jsonNode));
+            movie.setType(getMovieTypeFromJson(jsonNode));
+            return movie;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse movie by title response", e);
+        }
     }
 
     /**
@@ -58,18 +58,20 @@ public class APIMovieService {
      * @return строковое представление JSON сохраненного фильма
      * @throws IOException если возникают проблемы при чтении ответа от внешнего API
      */
-    public Movie getMovieDetails(Long id) throws IOException {
-        String responseBody = kinopoiskAPI.searchMovieById(id);
-        JsonNode jsonNode = objectMapper.readTree(responseBody);
-
-        Movie movie = getMovieDetailsFromJson(jsonNode);
-        movie.setGenres(getGenresFromJson(jsonNode));
-        movie.setActors(getActorsFromJson(jsonNode));
-        movie.setDirectors(getDirectorsFromJson(jsonNode));
-        movie.setType(getMovieTypeFromJson(jsonNode));
-        movie.setMovieScreenshots(getMovieScreenshotsFromJson(id));
-
-        return movie;
+    public Movie getMovieDetails(Long id) {
+        try {
+            String responseBody = kinopoiskAPI.searchMovieById(id);
+            JsonNode jsonNode = objectMapper.readTree(responseBody);
+            Movie movie = getMovieDetailsFromJson(jsonNode);
+            movie.setGenres(getGenresFromJson(jsonNode));
+            movie.setActors(getActorsFromJson(jsonNode));
+            movie.setDirectors(getDirectorsFromJson(jsonNode));
+            movie.setType(getMovieTypeFromJson(jsonNode));
+            movie.setMovieScreenshots(getMovieScreenshotsFromJson(id));
+            return movie;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse movie details response", e);
+        }
     }
 
     /**
@@ -178,14 +180,18 @@ public class APIMovieService {
      * @param id идентификатор кино
      * @return список скриншотов
      */
-    public Set<MovieScreenshot> getMovieScreenshotsFromJson(Long id) throws IOException {
-        String responseBody = kinopoiskAPI.searchScreenshotsByMovieId(id);
-        Set<MovieScreenshot> movieScreenshots = new HashSet<>(getScreenshotDetails(responseBody));
-        if (movieScreenshots.isEmpty() || movieScreenshots.size() < 10) {
-            responseBody = kinopoiskAPI.searchFrameByMovieId(id);
-            movieScreenshots = getScreenshotDetails(responseBody);
+    public Set<MovieScreenshot> getMovieScreenshotsFromJson(Long id) {
+        try {
+            String responseBody = kinopoiskAPI.searchScreenshotsByMovieId(id);
+            Set<MovieScreenshot> movieScreenshots = new HashSet<>(getScreenshotDetails(responseBody));
+            if (movieScreenshots.isEmpty() || movieScreenshots.size() < 10) {
+                responseBody = kinopoiskAPI.searchFrameByMovieId(id);
+                movieScreenshots = getScreenshotDetails(responseBody);
+            }
+            return movieScreenshots;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse screenshots response", e);
         }
-        return movieScreenshots;
     }
 
     /**
