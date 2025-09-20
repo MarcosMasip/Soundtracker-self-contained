@@ -24,15 +24,66 @@ run_docker() {
 
 if command -v docker >/dev/null 2>&1; then
   if run_docker; then
-    echo "[start] URLs:";
-    echo "  API:    http://localhost:8080/swagger-ui.html";
-    echo "  Angular static (if built): http://localhost:8080/app/angular/";
-    echo "  React static (if built):   http://localhost:8080/app/react/";
+    cat <<'EOF'
+[start] =============================================================
+[start] Soundtracker (Docker / mock profile)
+[start] -------------------------------------------------------------
+[start] Web UI / Docs:
+[start]   Swagger UI:      http://localhost:8080/swagger-ui.html
+[start]   Angular (static): http://localhost:8080/app/angular/    (if built)
+[start]   React   (static): http://localhost:8080/app/react/      (if built)
+[start]
+[start] Quick API Smoke Tests (copy/paste):
+[start]   curl -s http://localhost:8080/actuator/health | jq . 2>/dev/null || curl -s http://localhost:8080/actuator/health
+[start]   curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto | jq '.[0]' 2>/dev/null || curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto
+[start]
+[start] Auth (example sign-up & sign-in):
+[start]   curl -s -X POST -H 'Content-Type: application/json' \\
+[start]     -d '{"username":"demo","password":"demo"}' \\
+[start]     http://localhost:8080/api/auth/sign-up
+[start]   curl -s -X POST -H 'Content-Type: application/json' \\
+[start]     -d '{"username":"demo","password":"demo"}' \\
+[start]     http://localhost:8080/api/auth/sign-in
+[start]
+[start] Stopping (Docker path):
+[start]   docker compose down    # keep data volume
+[start]   docker compose down -v # remove Postgres data
+[start]
+[start] Profile Summary: running with 'mock' profile (Postgres + fixtures, stub external APIs)
+[start] =============================================================
+EOF
     exit 0
   else
     echo "[start] Docker path failed, falling back to local run." >&2
   fi
 fi
+
+cat <<'EOF'
+[start] =============================================================
+[start] Soundtracker (Local / H2 / local profile)
+[start] -------------------------------------------------------------
+[start] The application will now start in the foreground.
+[start] Once you see 'Started BackendApplication', open:
+[start]   Swagger UI:      http://localhost:8080/swagger-ui.html
+[start]   Angular (static): http://localhost:8080/app/angular/    (if built)
+[start]   React   (static): http://localhost:8080/app/react/      (if built)
+[start]
+[start] Quick checks (run in new terminal):
+[start]   curl -s http://localhost:8080/actuator/health | jq . 2>/dev/null || curl -s http://localhost:8080/actuator/health
+[start]   curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto | jq '.[0]' 2>/dev/null || curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto
+[start]
+[start] Auth flows (example):
+[start]   curl -s -X POST -H 'Content-Type: application/json' \\
+[start]     -d '{"username":"demo","password":"demo"}' \\
+[start]     http://localhost:8080/api/auth/sign-up
+[start]   curl -s -X POST -H 'Content-Type: application/json' \\
+[start]     -d '{"username":"demo","password":"demo"}' \\
+[start]     http://localhost:8080/api/auth/sign-in
+[start]
+[start] Stopping local run: Ctrl + C in this terminal.
+[start] Profile Summary: running with 'local' profile (H2 + fixtures, stub external APIs)
+[start] =============================================================
+EOF
 
 echo "[start] Running backend locally (H2 / local profile)"
 pushd "$ROOT_DIR/backend" >/dev/null
