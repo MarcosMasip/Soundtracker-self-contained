@@ -1,0 +1,14 @@
+{
+  "id": 1001,
+  "ruTitle": "Демо Фильм",
+  "enTitle": "Demo Movie",
+  "releaseYear": 2024,
+  "description": "A locally seeded demo movie used for offline mode.",
+  "length": 123,
+  "poster": "/media/posters/1001.jpg",
+  "type": {"id": 1, "name": "movie"},
+  "genres": [],
+  "actors": [],
+  "directors": [],
+  "movieScreenshots": []
+}

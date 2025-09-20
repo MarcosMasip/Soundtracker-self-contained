@@ -4,35 +4,29 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.soundtracker.backend.model.movie.Movie;
 import com.soundtracker.backend.model.music.Album;
+import com.soundtracker.backend.provider.movie.MovieMetadataProvider;
+import com.soundtracker.backend.provider.music.MusicMetadataProvider;
 import com.soundtracker.backend.repository.movie.MovieRepository;
-import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-import static com.soundtracker.backend.service.music.MusicService.getStringResponseEntity;
-
 /**
  * Сервис для работы с кино
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class MovieService {
 
-    private final OkHttpClient client;
     private final ObjectMapper objectMapper;
     private final MovieRepository movieRepository;
-
-    /**
-     * Конструктор по умолчанию для инициализации клиента OkHttp
-     */
-    public MovieService(ObjectMapper objectMapper, MovieRepository movieRepository) {
-        this.objectMapper = objectMapper;
-        this.client = new OkHttpClient();
-        this.movieRepository = movieRepository;
-    }
+    private final MovieMetadataProvider movieMetadataProvider;
+    private final MusicMetadataProvider musicMetadataProvider;
 
     /**
      * Получение информации о кино из базы данных
@@ -41,8 +35,17 @@ public class MovieService {
      * @return объект Movie, содержащий данные о кино
      */
     public Optional<Movie> getMovieInfoFromDatabase(String requestPath) {
-        String databaseUrl = "http://backend:8080/api-soudtracker/db-movie" + requestPath;
-        return getMovie(databaseUrl);
+        // Expected format: /info?id=<id>
+        if (requestPath != null && requestPath.contains("id=")) {
+            try {
+                Long id = Long.valueOf(requestPath.substring(requestPath.indexOf("id=") + 3));
+                return movieRepository.findById(id)
+                        .or(() -> movieMetadataProvider.findById(id));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid id in requestPath: {}", requestPath);
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -52,8 +55,9 @@ public class MovieService {
      * @return объект Movie, содержащий данные о кино
      */
     public Optional<Movie> getMovieInfoFromApi(Long id) {
-        String apiUrl = "http://backend:8080/api-soudtracker/api-movie/info?id=" + id;
-        return getMovie(apiUrl);
+        // In mock/local mode providers already represent 'API'; in live mode provider delegates outward.
+        return movieMetadataProvider.findById(id)
+                .or(() -> movieRepository.findById(id));
     }
 
     /**
@@ -62,18 +66,13 @@ public class MovieService {
      * @param url URL для получения кино
      * @return объект Movie, содержащий данные о кино
      */
-    @NotNull
-    private Optional<Movie> getMovie(String url) {
-        ResponseEntity<String> responseEntity = sendGetRequest(url);
-        if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.getBody() != null) {
-            try {
-                Movie movie = objectMapper.readValue(responseEntity.getBody(), Movie.class);
-                return Optional.of(movie);
-            } catch (JsonProcessingException e) {
-                return Optional.empty();
-            }
+    private Optional<Movie> getMovieFromJson(String json) {
+        try {
+            Movie movie = objectMapper.readValue(json, Movie.class);
+            return Optional.of(movie);
+        } catch (JsonProcessingException e) {
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     /**
@@ -82,10 +81,7 @@ public class MovieService {
      * @param url URL для отправки GET запроса
      * @return ответ от сервера
      */
-    private ResponseEntity<String> sendGetRequest(String url) {
-        Request request = new Request.Builder().url(url).build();
-        return executeRequest(request);
-    }
+    // HTTP self-calls removed; interactions are now direct through repository/providers.
 
     /**
      * Обновление информации о кино
@@ -109,8 +105,12 @@ public class MovieService {
      * @return ответ от сервера о результате обновления
      */
     public ResponseEntity<String> updateMovie(String movieJson) {
-        String databaseUrl = "http://backend:8080/api-soudtracker/db-movie/update";
-        return sendPutRequest(databaseUrl, movieJson);
+        return getMovieFromJson(movieJson)
+                .map(movie -> {
+                    movieRepository.save(movie);
+                    return ResponseEntity.ok("Movie updated.");
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid movie JSON"));
     }
 
     /**
@@ -120,14 +120,7 @@ public class MovieService {
      * @param requestBody тело запроса
      * @return ответ от сервера
      */
-    private ResponseEntity<String> sendPutRequest(String url, String requestBody) {
-        RequestBody body = RequestBody.create(requestBody, MediaType.parse("application/json"));
-        Request request = new Request.Builder()
-                .url(url)
-                .put(body)
-                .build();
-        return executeRequest(request);
-    }
+    // Removed HTTP PUT indirection; using direct persistence.
 
     /**
      * Отправка HTTP запроса
@@ -135,9 +128,7 @@ public class MovieService {
      * @param request запрос
      * @return ответ от сервера
      */
-    private ResponseEntity<String> executeRequest(Request request) {
-        return getStringResponseEntity(request, client);
-    }
+    // Removed OkHttp execution; no longer required for internal operations.
 
     /**
      * Установка альбома для кино
@@ -147,19 +138,16 @@ public class MovieService {
      */
     public ResponseEntity<String> setAlbum(Long id, String albumName) throws JsonProcessingException {
         Optional<Movie> optionalMovie = movieRepository.findById(id);
-        if (optionalMovie.isPresent()) {
-            Movie movie = optionalMovie.get();
-            String url = "http://backend:8080/api-soudtracker/api-music/album?name=" + albumName;
-            ResponseEntity<String> responseEntity = sendGetRequest(url);
-            if (responseEntity.getStatusCode().is2xxSuccessful()) {
-                String albumJson = responseEntity.getBody();
-                Album album = objectMapper.readValue(albumJson, Album.class);
-                movie.setAlbum(album);
-                movieRepository.save(movie);
-                return ResponseEntity.ok("Album set.");
-            } else {
-                return ResponseEntity.status(responseEntity.getStatusCode()).body("Error getting album.");
-            }
-        } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Movie with id: " + id + " not found.");
+        if (optionalMovie.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Movie with id: " + id + " not found.");
+        }
+        Movie movie = optionalMovie.get();
+        Album album = musicMetadataProvider.findByName(albumName).orElse(null);
+        if (album == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Album '" + albumName + "' not found in metadata provider.");
+        }
+        movie.setAlbum(album);
+        movieRepository.save(movie);
+        return ResponseEntity.ok("Album set.");
     }
 }
