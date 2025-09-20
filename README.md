@@ -165,6 +165,16 @@ SPA clean URLs & 404 notes:
 	After success you should have `backend/src/main/resources/static/app/react/index.html` and the link will work.
 4. Deep links inside the SPAs (e.g. `/app/angular/some/route`) are not yet globally forwarded. If you add client-side routing, add a catch-all controller mapping those paths back to the SPA `index.html`.
 
+Angular base href:
+The Angular app is hosted under a subpath (`/app/angular/`). To ensure its relative asset URLs work, the build now runs with `--base-href /app/angular/` and the embedded `index.html` has `<base href="/app/angular/">`. If you manually invoke Angular builds outside the setup script, reproduce this with:
+```
+cd angular-client
+npx ng build --base-href /app/angular/
+cd ..
+bash scripts/setup.sh --force
+```
+Without the correct base-href you may see a blank (green) screen due to CSS/JS 404s.
+
 ### 7. Prove offline capability
 1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.
 2. Disable network (airplane mode / unplug / turn off Wi-Fi).

@@ -40,7 +40,15 @@ build_frontend () {
   fi
 }
 
-build_frontend "$ROOT_DIR/angular-client"
+## Build Angular with explicit base-href so it serves correctly from /app/angular/
+if [[ -f "$ROOT_DIR/angular-client/package.json" ]]; then
+  echo "[setup] Building Angular with base href /app/angular/"
+  (cd "$ROOT_DIR/angular-client" && npm install --no-audit --no-fund && \
+    npx ng build --base-href /app/angular/ || echo "[setup] WARNING: Angular build failed")
+fi
+
+# React build (leave logic in helper or inline as before)
+build_frontend "$ROOT_DIR/react-client"
 build_frontend "$ROOT_DIR/react-client"
 
 echo "[setup] Embedding frontend build artifacts into backend static (if present)"
