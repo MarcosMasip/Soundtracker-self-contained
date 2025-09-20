@@ -1,0 +1,17 @@
+# Root ignore additions for self-contained build artifacts
+
+# Marker file created by setup script (environment-specific)
+.setup-complete
+
+# Local H2 database persistence directory
+backend/.local/
+
+# Embedded frontend build outputs (rebuilt via setup; do not commit generated files)
+backend/src/main/resources/static/
+
+# Node dependency directories (safety; already ignored in subprojects normally)
+angular-client/node_modules/
+react-client/node_modules/
+
+# macOS metadata
+.DS_Store
