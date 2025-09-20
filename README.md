@@ -150,7 +150,20 @@ Example (truncated) JSON you might see:
 Static frontend (if built by setup):
 - Angular: http://localhost:8080/app/angular/
 - React:   http://localhost:8080/app/react/
- (If either returns 404, rebuild with: `bash scripts/setup.sh --force` – Angular output is flattened automatically; React needs a successful `npm run build`).
+
+SPA clean URLs & 404 notes:
+1. A lightweight controller forwards `/app/angular/` and `/app/react/` to their respective `index.html` so you can omit the filename.
+2. If Angular still 404s, confirm `backend/src/main/resources/static/app/angular/index.html` exists (should be produced by setup).
+3. React may 404 on first run because the build previously failed (missing dependency). Fix by:
+	```bash
+	cd react-client
+	npm install react-modal --save
+	npm run build
+	cd ..
+	bash scripts/setup.sh --force   # re-embeds build into backend
+	```
+	After success you should have `backend/src/main/resources/static/app/react/index.html` and the link will work.
+4. Deep links inside the SPAs (e.g. `/app/angular/some/route`) are not yet globally forwarded. If you add client-side routing, add a catch-all controller mapping those paths back to the SPA `index.html`.
 
 ### 7. Prove offline capability
 1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.
