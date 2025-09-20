@@ -8,4 +8,4 @@ IF NOT EXIST %WRAPPER_JAR% (
     ECHO Failed to download Maven Wrapper & EXIT /B 1 )
 )
 WHERE java >NUL 2>&1 || (ECHO Java not found & EXIT /B 1)
-java -cp %WRAPPER_JAR% org.apache.maven.wrapper.MavenWrapperMain %*
+java -Dmaven.multiModuleProjectDirectory=%~dp0 -cp %WRAPPER_JAR% org.apache.maven.wrapper.MavenWrapperMain %*

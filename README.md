@@ -16,8 +16,9 @@ Key properties:
 ### Quick Start
 macOS / Linux:
 ```
-./scripts/setup.sh
-./scripts/start.sh
+# If you see 'permission denied', either add execute bit or invoke via bash.
+bash scripts/setup.sh
+bash scripts/start.sh
 ```
 
 Windows (PowerShell):
@@ -25,6 +26,279 @@ Windows (PowerShell):
 scripts\setup.ps1
 scripts\start.ps1
 ```
+
+## Step-by-Step Onboarding (Cross-Platform)
+
+This section gives a literal, copy/paste friendly path from zero to a running, fully offline instance.
+
+### 1. Prerequisites
+Mandatory (first run must be online once to cache artifacts):
+- Java 17+ (verify: `java -version`)
+- Git
+- Internet connectivity for the very first `setup` run (after that: optional)
+
+Optional but recommended:
+- Docker Desktop (macOS/Windows) OR Docker Engine (Linux) for Postgres container; otherwise H2 fallback is used.
+- Node.js 18+ & npm (only needed if you plan to rebuild the Angular/React frontends; pre-built bundles can be reused once produced).
+- `jq` command-line JSON processor (for pretty printing API responses in examples below).
+
+### 2. Clone the repository
+macOS / Linux:
+```
+git clone https://github.com/<your-org-or-user>/Soundtracker-self-contained.git
+cd Soundtracker-self-contained
+```
+Windows (PowerShell):
+```
+git clone https://github.com/<your-org-or-user>/Soundtracker-self-contained.git
+cd Soundtracker-self-contained
+```
+
+### 3. (macOS/Linux) Ensure script permissions (skip if already executable)
+```
+chmod +x scripts/*.sh backend/mvnw
+```
+If you forget this and see `permission denied`, either run the chmod above or invoke via `bash scripts/setup.sh`.
+
+### 4. Run the one-time setup (caches everything)
+macOS / Linux:
+```
+bash scripts/setup.sh
+```
+Windows (PowerShell):
+```
+scripts\setup.ps1
+```
+What happens:
+1. Computes a signature of backend & frontend dependency manifests.
+2. Pre-pulls the Postgres Docker image (if Docker is present).
+3. Downloads all Maven dependencies (offline warmup) and builds backend JAR.
+4. Installs Node dependencies & builds Angular / React (if their `package.json` exists).
+5. Copies built frontend assets into `backend/src/main/resources/static/app/<framework>` for offline serving.
+6. Writes `.setup-complete` with the dependency signature so subsequent runs are instant unless something changed.
+
+Expected (abridged) output sample:
+```
+[setup] Starting dependency preparation...
+[setup] Docker detected: pre-pulling postgres:latest  # (or 'Docker not found ...')
+[setup] Backend Maven offline warmup
+[setup] Installing Node deps in .../angular-client
+[setup] Installing Node deps in .../react-client
+[setup] Embedding frontend build artifacts into backend static (if present)
+[setup] Creating signature marker
+[setup] Complete.
+```
+Re-running without changes:
+```
+bash scripts/setup.sh
+[setup] Already complete (signature match). Use --force to rebuild.
+```
+Force a rebuild after changing dependencies:
+```
+bash scripts/setup.sh --force     # macOS/Linux
+scripts\setup.ps1 -Force          # Windows
+```
+
+### 5. Start the stack
+macOS / Linux:
+```
+bash scripts/start.sh
+```
+Windows (PowerShell):
+```
+scripts\start.ps1
+```
+Behavior:
+1. If Docker is available: launches Postgres + backend with profile `mock`.
+2. Waits for health endpoint to become UP.
+3. Prints useful URLs.
+4. If Docker is not available or fails, falls back to in-process Spring Boot with H2 using profile `local`.
+
+Sample output (Docker path):
+```
+[start] Launching via docker-compose (mock profile)
+[start] Waiting for backend health
+[start] Backend is up.
+[start] URLs:
+	API:    http://localhost:8080/swagger-ui.html
+	Angular static (if built): http://localhost:8080/app/angular/
+	React static (if built):   http://localhost:8080/app/react/
+```
+
+### 6. Verify it works
+Health check:
+```
+curl -s http://localhost:8080/actuator/health | jq . 2>/dev/null || curl -s http://localhost:8080/actuator/health
+```
+Swagger UI: open http://localhost:8080/swagger-ui.html in a browser.
+
+List seeded movies (DTO list):
+```
+curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto | jq '.[0]'
+```
+Example (truncated) JSON you might see:
+```
+{
+	"id": 1001,
+	"title": "Demo Movie",
+	"year": 2024,
+	"genres": ["Sci-Fi"],
+	...
+}
+```
+Static frontend (if built by setup):
+- Angular: http://localhost:8080/app/angular/
+- React:   http://localhost:8080/app/react/
+
+### 7. Prove offline capability
+1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.
+2. Disable network (airplane mode / unplug / turn off Wi-Fi).
+3. Run `bash scripts/start.sh` (or `scripts\start.ps1`).
+4. Health & movie endpoints should still respond because all dependencies & dataset are local.
+
+### 8. Common next actions
+- Extend dataset (see section: Extending the Offline Dataset).
+- Rebuild frontends after making UI changes: re-run setup with `--force`.
+- Switch to H2 even if Docker exists: run `SPRING_PROFILES_ACTIVE=local ./backend/mvnw spring-boot:run` (advanced / optional).
+
+## How the Two Commands Work
+| Command | Core Responsibilities | Idempotency Mechanism |
+|---------|-----------------------|------------------------|
+| setup   | Cache Maven deps, build backend, build frontends, embed static assets, pre-pull Docker images | Signature file `.setup-complete` with hashes of `pom.xml` & each frontend `package.json` |
+| start   | Prefer Docker (Postgres + mock profile), wait for health; else local Spring Boot with H2 | Detects `.setup-complete`; falls back seamlessly if Docker absent |
+
+Implementation notes:
+- Frontend embedding means no separate Node server containers are required.
+- Adds reproducibility: the backend serves a frozen dist of the UIs.
+- Re-running setup after only source edits (no dependency changes) is optional unless you changed frontend code that needs a rebuild.
+
+## Extending the Offline Dataset
+Movie fixtures live in: `backend/src/main/resources/data/movies/`
+Music (album) fixtures: `backend/src/main/resources/data/music/albums/`
+
+Add a new movie:
+1. Create a JSON file named with a numeric ID, e.g. `1050.json`.
+2. Minimal shape (example):
+	 ```json
+	 {
+		 "id": 1050,
+		 "title": "Another Demo Movie",
+		 "year": 2022,
+		 "genres": ["Action", "Drama"],
+		 "description": "Short synopsis here"
+	 }
+	 ```
+3. Restart the application (no need to re-run setup unless you also added dependencies). The seeder will ingest the new fixture if that ID is not already in the database.
+
+To update a fixture that was already seeded:
+- Delete it from Postgres (if using Docker) or from the H2 database, or clear the DB (see Cleanup & Reset) then restart.
+
+Albums association:
+- The mock seeder may attempt simple title heuristics; ensure album fixture titles align with the movie if you want automatic linkage.
+
+## Troubleshooting Matrix (Condensed)
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `permission denied: ./scripts/setup.sh` | Missing execute bit | `chmod +x scripts/*.sh backend/mvnw` or `bash scripts/setup.sh` |
+| PowerShell: `script cannot be loaded` | Execution policy blocks local scripts | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| `-Dmaven.multiModuleProjectDirectory system property is not set.` | Non-standard wrapper / line endings | Use included wrapper; ensure `dos2unix backend/mvnw`; add execute bit |
+| Port 8080 already in use | Another process/container running | Stop conflict (`lsof -i:8080`), or set `server.port` in a profile override |
+| Docker not installed/running | Start script can't launch containers | Start script falls back automatically to H2 local run (message logged) |
+| First run offline fails (dependency not found) | Dependencies not cached yet | Run `setup` once while online |
+| Node build OOM / slow | Low RAM / many parallel processes | Re-run with `npm install --no-audit`; close other apps; optionally skip frontend build if not needed |
+| Changed fixture not reflected | Old row persisted | Delete row from DB or wipe volume (see Cleanup & Reset) then restart |
+
+## Cleanup & Reset
+Docker path (remove containers & volumes):
+```
+docker compose down -v
+```
+Remove the setup signature so next run does a full rebuild:
+```
+rm -f .setup-complete               # macOS/Linux
+Remove-Item .setup-complete -ErrorAction SilentlyContinue  # Windows
+```
+Force a full rebuild (dependencies + frontends):
+```
+bash scripts/setup.sh --force   # or scripts\setup.ps1 -Force
+```
+Reset only the database contents:
+```
+docker compose down -v && docker compose up -d   # forces new Postgres volume & reseed
+```
+Local run (H2) reset: just stop the app and delete the old `backend/target` folder if desired; seed runs fresh each startup for missing IDs.
+
+Do NOT commit `.setup-complete` (it is already ignored) – it is environment-specific.
+
+---
+
+### Troubleshooting
+Maven wrapper error `-Dmaven.multiModuleProjectDirectory system property is not set.`
+
+Cause: A minimal/custom `mvnw` script missing the standard property pass-through.
+
+Fix already applied in this repo. If you still encounter it:
+```
+cd backend
+./mvnw -v
+```
+Should print Maven version without the error. If not, ensure execute bit and no CRLF line endings:
+```
+dos2unix backend/mvnw  # if installed
+chmod +x backend/mvnw
+```
+
+Permission denied (macOS/Linux):
+```
+zsh: permission denied: ./scripts/setup.sh
+```
+Causes: file execute bit not set (common after some archive downloads or if Git didn't preserve mode).
+
+Fix options:
+1. Add execute permission (preferred):
+```
+chmod +x scripts/*.sh
+./scripts/setup.sh
+```
+2. Or explicitly invoke with bash without changing permissions:
+```
+bash scripts/setup.sh
+```
+3. Persist executable bit in Git (if you have commit rights) so collaborators don’t hit this again:
+```
+git update-index --chmod=+x scripts/setup.sh scripts/start.sh backend/mvnw
+git commit -m "chore: perms: make scripts & mvnw executable"
+```
+4. If Git keeps losing execute bits (e.g., on some network filesystems), ensure `core.fileMode` is enabled:
+```
+git config core.fileMode true
+```
+	 If you need to enforce this for everyone, add to `.gitconfig` globally or document in contribution guidelines.
+
+Verify after fix:
+```
+ls -l scripts/setup.sh backend/mvnw
+# Expect: -rwxr-xr-x (or similar with x bits present)
+```
+
+Windows notes:
+- PowerShell scripts (`.ps1`) do not use UNIX execute bits.
+- If using WSL, apply the chmod commands inside the WSL filesystem; cloning into a Windows NTFS mount can sometimes strip mode bits.
+
+CI/CD hint:
+Add a lightweight check to prevent regressions (GitHub Actions example):
+```
+if [[ ! -x scripts/setup.sh || ! -x scripts/start.sh ]]; then
+	echo "Scripts missing execute bit" >&2; exit 1; fi
+```
+
+If running on macOS and you get a Gatekeeper prompt for an unsigned binary, this does not apply here (the scripts are plain text). Ensure your shell is not aliasing `bash` to something unexpected.
+
+Node / npm permission errors:
+Run with `npm ci` default; if you see EACCES issues, ensure you don’t use a globally restricted prefix or run inside a directory with proper ownership.
+
+Maven offline errors:
+If the first run is completely offline, Maven cannot fetch dependencies. Run `./scripts/setup.sh` once while online, then subsequent runs can be offline.
 
 ### Profiles
 - `mock` (default in Docker): Uses fixtures + Postgres container.

@@ -1,19 +1,49 @@
 #!/bin/sh
-# Maven Wrapper startup script simplified for repository usage
-MAVEN_WRAPPER_DIR="$(cd "$(dirname "$0")"; pwd -P)"
-WRAPPER_JAR="$MAVEN_WRAPPER_DIR/.mvn/wrapper/maven-wrapper.jar"
+# NOTE: Ensure this wrapper has execute permission (`chmod +x backend/mvnw`).
+# Standardized Maven Wrapper script (trimmed) with multiModuleProjectDirectory handling.
+
+set -euo pipefail
+
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+BASEDIR=`dirname "$PRG"`
+BASEDIR=`cd "$BASEDIR" && pwd`
+APP_BASE_DIR=${MAVEN_PROJECTBASEDIR:-$BASEDIR}
+
+WRAPPER_JAR="$APP_BASE_DIR/.mvn/wrapper/maven-wrapper.jar"
 WRAPPER_DL_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
 
 if [ ! -f "$WRAPPER_JAR" ]; then
-  mkdir -p "$MAVEN_WRAPPER_DIR/.mvn/wrapper"
   echo "Downloading Maven Wrapper jar..." >&2
-  curl -fsSL -o "$WRAPPER_JAR" "$WRAPPER_DL_URL" || { echo "Failed to download Maven Wrapper" >&2; exit 1; }
+  mkdir -p "$APP_BASE_DIR/.mvn/wrapper"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$WRAPPER_JAR" "$WRAPPER_DL_URL" || { echo "Failed to download Maven Wrapper" >&2; exit 1; }
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$WRAPPER_JAR" "$WRAPPER_DL_URL" || { echo "Failed to download Maven Wrapper" >&2; exit 1; }
+  else
+    echo "Neither curl nor wget found to download Maven Wrapper" >&2; exit 1
+  fi
 fi
 
-JAVA_EXE="$(command -v java)"
-if [ -z "$JAVA_EXE" ]; then
-  echo "Java not found in PATH" >&2
-  exit 1
+JAVA_EXE="${JAVA_HOME:-}"/bin/java
+if [ ! -x "$JAVA_EXE" ]; then
+  JAVA_EXE="$(command -v java || true)"
+fi
+if [ ! -x "$JAVA_EXE" ]; then
+  echo "Java executable not found" >&2; exit 1
 fi
 
-exec "$JAVA_EXE" -cp "$WRAPPER_JAR" org.apache.maven.wrapper.MavenWrapperMain "$@"
+WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
+
+exec "$JAVA_EXE" \
+  -Dmaven.multiModuleProjectDirectory="$APP_BASE_DIR" \
+  -cp "$WRAPPER_JAR" \
+  $WRAPPER_LAUNCHER "$@"

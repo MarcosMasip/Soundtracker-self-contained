@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# NOTE: Ensure this file has executable permissions (`chmod +x scripts/setup.sh`).
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MARKER="$ROOT_DIR/.setup-complete"
