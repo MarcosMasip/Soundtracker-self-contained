@@ -301,12 +301,60 @@ Run with `npm ci` default; if you see EACCES issues, ensure you don’t use a gl
 Maven offline errors:
 If the first run is completely offline, Maven cannot fetch dependencies. Run `./scripts/setup.sh` once while online, then subsequent runs can be offline.
 
-### Profiles
-- `mock` (default in Docker): Uses fixtures + Postgres container.
-- `local`: Same fixtures, uses embedded H2 (no Docker required).
-- `live`: Placeholder for future real external API integration.
+### Profiles & Secrets
 
-Add more fixture JSON files under `backend/src/main/resources/data/movies` and `.../data/music/albums` and restart to extend dataset.
+| Profile | External API Calls | JWT Signing Key Source | Database | Purpose |
+|---------|--------------------|------------------------|----------|---------|
+| mock (default in Docker) | Stubbed (no real Kinopoisk / Spotify) | Built‑in dev key in `application-mock.properties` | Postgres container | Deterministic offline demo with container DB |
+| local | Stubbed (no real Kinopoisk / Spotify) | Built‑in dev key in `application-local.properties` | Embedded H2 | Easiest zero‑Docker local run |
+| live | Real (Kinopoisk / Spotify beans activated) | MUST provide via env/property (`token.signing.key`) | Depends on how you launch (Postgres or other) | Real integration testing |
+
+Key points:
+1. The dev JWT signing key embedded in `mock` and `local` is ONLY for development/offline use. Do NOT reuse in production.
+2. When running with `live` profile you must supply your own strong signing key and the external API credentials; the stub beans are not loaded.
+3. If you do not set the required live credentials the application context will fail to start when the `live` profile is active.
+
+Supplying secrets for `live` (examples):
+
+macOS / Linux (temporary shell env):
+```
+export TOKEN_SIGNING_KEY="$(openssl rand -base64 48)"
+export KINOPOISK_API_KEY="<your-kinopoisk-key>"
+export SPOTIFY_CLIENT_ID="<your-spotify-client-id>"
+export SPOTIFY_CLIENT_SECRET="<your-spotify-client-secret>"
+SPRING_PROFILES_ACTIVE=live ./backend/mvnw spring-boot:run
+```
+
+Windows (PowerShell):
+```
+$env:TOKEN_SIGNING_KEY = [Convert]::ToBase64String((New-Object byte[] 48 | %{ (Get-Random -Maximum 256) }))
+$env:KINOPOISK_API_KEY = "<your-kinopoisk-key>"
+$env:SPOTIFY_CLIENT_ID = "<your-spotify-client-id>"
+$env:SPOTIFY_CLIENT_SECRET = "<your-spotify-client-secret>"
+$env:SPRING_PROFILES_ACTIVE = "live"
+./backend/mvnw spring-boot:run
+```
+
+Property name mapping:
+- `token.signing.key` ⇢ env var `TOKEN_SIGNING_KEY`
+- `kinopoisk.apiKey` ⇢ env var `KINOPOISK_API_KEY`
+- `spotify.client.id` ⇢ env var `SPOTIFY_CLIENT_ID`
+- `spotify.client.secret` ⇢ env var `SPOTIFY_CLIENT_SECRET`
+
+Generating a strong key (alternative commands):
+```
+openssl rand -base64 48
+``` 
+or
+```
+dd if=/dev/urandom bs=64 count=1 2>/dev/null | base64
+```
+
+Endpoint behavior by profile:
+- In `mock` / `local`, external API endpoints return deterministic stub JSON (or minimal placeholders) – suitable for UI and integration flows without network.
+- In `live`, real upstream calls are performed; failures will propagate as runtime errors/logged exceptions if credentials or network are absent.
+
+Adding more fixture JSON files under `backend/src/main/resources/data/movies` and `.../data/music/albums` then restarting extends the deterministic dataset (all profiles still seed from fixtures when entries are missing).
 
 ---
 
