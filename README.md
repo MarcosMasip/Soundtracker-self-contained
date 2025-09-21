@@ -178,6 +178,29 @@ Without the correct base-href you may see a blank (green) screen due to CSS/JS 4
 Tracking policy for built frontends:
 The generated Angular and React `index.html` (and their hashed JS/CSS bundles) are intentionally NOT tracked in Git. Only the root landing page (`static/index.html`) lives in the repo. Always run `bash scripts/setup.sh` after cloning (or `--force` after frontend source changes) to regenerate `/app/angular/` and `/app/react/` assets. This avoids noisy commits every time a hash changes while keeping the repo lightweight.
 
+### H2 Console (Local Profile)
+If you click the `H2 Console` link and press `Test Connection` without changes you may see an error about a missing `~/test` database. That's just the console's built-in default URL (`jdbc:h2:~/test`) and **not** what the app uses.
+
+Current local profile datasource (from `application-local.properties`):
+```
+jdbc:h2:file:./.local/h2db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+```
+To connect via the web console:
+1. Replace the JDBC URL field with the exact line above.
+2. User Name: `sa`
+3. Password: (leave empty)
+4. Click Connect.
+
+Optional (ephemeral in‑memory DB): If you prefer a throwaway database per run, change the property to:
+```
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+```
+Then use `jdbc:h2:mem:testdb` in the console. (Do this only if you don't need file persistence between runs.)
+
+Security note: The console is enabled and unauthenticated only in local usage scenarios. Do **not** expose it in production; disable by removing `spring.h2.console.enabled=true` or restricting the `/h2-console/**` path.
+
+---
+
 ### 7. Prove offline capability
 1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.
 2. Disable network (airplane mode / unplug / turn off Wi-Fi).
