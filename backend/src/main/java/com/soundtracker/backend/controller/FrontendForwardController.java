@@ -1,6 +1,7 @@
 package com.soundtracker.backend.controller;
 
 import org.springframework.core.io.ClassPathResource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,13 +31,10 @@ public class FrontendForwardController {
         return "forward:/app/react/index.html";
     }
 
-    // React deep-link forwarding: forward non-asset paths under /app/react to index.html
-    // This enables client-side routing (e.g., /app/react/movies/1001)
-    @GetMapping({
-            "/app/react/{path:^(?!static|favicon\\.ico|manifest\\.json|logo\\d+\\.png).*$}",
-            "/app/react/{path:^(?!static).*$}/{subpath:**}"
-    })
-    public String reactDeepLink() {
+    // React deep-link forwarding (scoped): Only forward movie detail paths so we avoid broad wildcard loops.
+    // If you later add more top-level routes, add additional @GetMapping methods similarly.
+    @GetMapping("/app/react/movies/**")
+    public String reactMoviesDeepLink() {
         return "forward:/app/react/index.html";
     }
 
