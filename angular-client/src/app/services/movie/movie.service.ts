@@ -10,15 +10,16 @@ import {Movie} from "../../models/movie/movie.model";
   providedIn: 'root'
 })
 export class MovieService {
-  private baseUrl = 'http://backend:8080';
+  // Use relative base URL so it works in both Docker (served via reverse proxy/service name) and local host without CORS issues.
+  private baseUrl = '';
 
   constructor(private http: HttpClient) {
   }
 
   getAllMoviesDto(): Observable<MovieDto[]> {
-    return this.http.get<MovieDto[]>(`${this.baseUrl}/api-soudtracker/db-movie/all-movies-dto`);
+    return this.http.get<MovieDto[]>(`${this.baseUrl}/api-soundtracker/db-movie/all-movies-dto`);
   }
   getMovieById(id: number): Observable<Movie> {
-    return this.http.get<Movie>(`${this.baseUrl}/api-soudtracker/db-movie/info?id=${id}`);
+    return this.http.get<Movie>(`${this.baseUrl}/api-soundtracker/db-movie/info?id=${id}`);
   }
 }

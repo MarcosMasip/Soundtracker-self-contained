@@ -19,7 +19,9 @@ import java.util.List;
 @Tag(name = "Database Movie Controller",
         description = "Контроллер для работы с информацией о кино из базы данных")
 @CrossOrigin(origins = {"http://frontend:4200", "http://localhost:3000"})
-@RequestMapping("/api-soudtracker/db-movie")
+// Accept both legacy misspelled prefix (api-soudtracker) and the corrected one (api-soundtracker)
+// to avoid 404s while frontend/services are being aligned.
+@RequestMapping({"/api-soudtracker/db-movie", "/api-soundtracker/db-movie"})
 public class DBMovieController {
 
     private final DBMovieService dbMovieService;

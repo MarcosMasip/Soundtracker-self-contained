@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "API Movie Controller",
         description = "Контроллер для работы с информацией о кино из внешнего API (Kinopoisk API)")
 @CrossOrigin(origins = {"http://frontend:4200", "http://localhost:3000"})
-@RequestMapping("/api-soudtracker/api-movie")
+@RequestMapping({"/api-soudtracker/api-movie", "/api-soundtracker/api-movie"})
 public class APIMovieController {
 
     private final APIMovieService apiMovieService;

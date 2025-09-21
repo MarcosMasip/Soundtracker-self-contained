@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  * Контроллер для работы с музыкой из базы данных
  */
 @RestController
-@RequestMapping("/api-soudtracker/db-music")
+@RequestMapping({"/api-soudtracker/db-music", "/api-soundtracker/db-music"})
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://frontend:4200", "http://localhost:3000"})
 @Tag(name = "Database Music Controller",

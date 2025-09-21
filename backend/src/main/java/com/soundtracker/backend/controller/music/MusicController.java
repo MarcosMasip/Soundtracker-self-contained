@@ -15,7 +15,7 @@ import java.util.Optional;
  * Контроллер для работы с музыкой
  */
 @RestController
-@RequestMapping("/api-soudtracker/music")
+@RequestMapping({"/api-soudtracker/music", "/api-soundtracker/music"})
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://frontend:4200", "http://localhost:3000"})
 @Tag(name = "Music Controller",

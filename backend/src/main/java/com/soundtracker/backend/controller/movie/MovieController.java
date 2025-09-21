@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = {"http://frontend:4200", "http://localhost:3000"})
-@RequestMapping("/api-soudtracker/movie")
+@RequestMapping({"/api-soudtracker/movie", "/api-soundtracker/movie"})
 @Tag(name = "Movie Controller",
         description = "Контроллер для работы с информацией о кино")
 public class MovieController {

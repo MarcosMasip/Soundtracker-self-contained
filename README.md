@@ -137,6 +137,9 @@ List seeded movies (DTO list):
 ```
 curl -s http://localhost:8080/api-soundtracker/db-movie/all-movies-dto | jq '.[0]'
 ```
+Legacy vs corrected API prefix:
+The backend historically exposed endpoints under the misspelled prefix `/api-soudtracker/` (missing the first 'n'). A transitional change now allows BOTH `/api-soudtracker/**` and the corrected `/api-soundtracker/**` forms. Frontend code and examples in this README use the corrected spelling. Old clients or cached frontend bundles using the misspelled prefix will continue to function until the legacy mapping is removed in a future cleanup. Plan: validate all consumers have migrated, then delete the legacy prefix.
+
 Example (truncated) JSON you might see:
 ```
 {
