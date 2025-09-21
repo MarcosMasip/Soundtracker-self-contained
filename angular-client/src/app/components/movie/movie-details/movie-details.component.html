@@ -4,23 +4,23 @@
       <img [src]="movie?.poster" [alt]="movie?.enTitle" class="w-full h-auto">
     </div>
     <div class="w-2/3 ml-8">
-      <h2 class="text-3xl font-bold">{{ movie?.ruTitle }}</h2>
-      <p class="mt-2 text-xl">{{ movie?.enTitle }}</p>
-      <p class="mt-4 text-lg">{{ movie?.description }}</p>
+  <h2 class="text-3xl font-bold">{{ movie?.enTitle || movie?.ruTitle }}</h2>
+  <p class="mt-2 text-xl" *ngIf="movie?.ruTitle && movie?.enTitle && movie?.enTitle !== movie?.ruTitle">{{ movie?.ruTitle }}</p>
+  <p class="mt-4 text-lg">{{ movie?.description }}</p>
       <br>
       <div *ngFor="let genre of movie?.genres"
            class="inline-block bg-custom-green rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">{{ genre.name }}
       </div>
 
       <br>
-      <p class="mt-2"><strong>Год производства:</strong> {{ movie?.releaseYear }}</p>
-      <p class="mt-2"><strong>Продолжительность:</strong> {{ movie?.length }} минут</p>
+  <p class="mt-2"><strong>Year:</strong> {{ movie?.releaseYear }}</p>
+  <p class="mt-2"><strong>Duration:</strong> {{ movie?.length }} min</p>
       <br>
 
-      <p class="mt-2"><strong>Режиссер:</strong>
+  <p class="mt-2"><strong>Director(s):</strong>
         <ng-container *ngFor="let director of movie?.directors; let i = index; let isLast = last">
           <span class="relative director" (mouseover)="hoverDirectors[i] = true" (mouseout)="hoverDirectors[i] = false">
-            {{ director.ruName }}
+            {{ director.enName || director.ruName }}
             <div class="absolute bg-white p-2 border border-gray-300 rounded-lg shadow-lg director-card z-50"
                  [style.left.px]="0" [style.top.px]="20" *ngIf="hoverDirectors[i]">
               <h4>{{ director.enName }}</h4>
@@ -31,10 +31,10 @@
         </ng-container>
       </p>
 
-      <p class="mt-2"><strong>Актерский состав:</strong>
+  <p class="mt-2"><strong>Cast:</strong>
         <ng-container *ngFor="let actor of movie?.actors; let i = index; let isLast = last">
           <span class="relative actor" (mouseover)="hover[i] = true" (mouseout)="hover[i] = false">
-            {{ actor.ruName }}
+            {{ actor.enName || actor.ruName }}
             <div class="absolute bg-white p-2 border border-gray-300 rounded-lg shadow-lg actor-card z-50"
                  [style.left.px]="0" [style.top.px]="20" *ngIf="hover[i]">
               <h4>{{ actor.enName }}</h4>
@@ -47,7 +47,7 @@
 
       <div *ngIf="displayedScreenshots.length > 0">
         <br>
-        <p class="mt-2"><strong>Кадры из фильма</strong></p>
+  <p class="mt-2"><strong>Screenshots</strong></p>
         <div class="flex items-center mt-8">
           <button
             class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"

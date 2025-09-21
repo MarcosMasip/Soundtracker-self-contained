@@ -3,6 +3,15 @@
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MARKER="$ROOT_DIR/.setup-complete"
+FORCE=false
+for arg in "$@"; do
+  case "$arg" in
+    --force|-f)
+      FORCE=true
+      shift
+      ;;
+  esac
+done
 
 hash_file() { shasum "$1" 2>/dev/null | awk '{print $1}'; }
 
@@ -12,7 +21,7 @@ REACT_LOCK_HASH=$(hash_file "$ROOT_DIR/react-client/package.json" || echo none)
 
 CURRENT_SIGNATURE="backend=$BACKEND_POM_HASH;angular=$ANGULAR_LOCK_HASH;react=$REACT_LOCK_HASH"
 
-if [[ -f "$MARKER" ]] && grep -q "$CURRENT_SIGNATURE" "$MARKER"; then
+if [[ "$FORCE" == false ]] && [[ -f "$MARKER" ]] && grep -q "$CURRENT_SIGNATURE" "$MARKER"; then
   echo "[setup] Already complete (signature match). Use --force to rebuild."
   exit 0
 fi
