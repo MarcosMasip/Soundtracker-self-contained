@@ -8,9 +8,7 @@ backend/.local/
 
 # Embedded frontend build outputs (rebuilt via setup; do not commit generated files)
 backend/src/main/resources/static/
-!backend/src/main/resources/static/index.html
-!backend/src/main/resources/static/app/angular/index.html
-!backend/src/main/resources/static/app/react/index.html
+!backend/src/main/resources/static/index.html  # Keep only landing page tracked; SPA builds are generated
 
 # Node dependency directories (safety; already ignored in subprojects normally)
 angular-client/node_modules/

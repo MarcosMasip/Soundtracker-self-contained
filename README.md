@@ -175,6 +175,9 @@ bash scripts/setup.sh --force
 ```
 Without the correct base-href you may see a blank (green) screen due to CSS/JS 404s.
 
+Tracking policy for built frontends:
+The generated Angular and React `index.html` (and their hashed JS/CSS bundles) are intentionally NOT tracked in Git. Only the root landing page (`static/index.html`) lives in the repo. Always run `bash scripts/setup.sh` after cloning (or `--force` after frontend source changes) to regenerate `/app/angular/` and `/app/react/` assets. This avoids noisy commits every time a hash changes while keeping the repo lightweight.
+
 ### 7. Prove offline capability
 1. Stop everything: `docker compose down` (if using Docker) OR Ctrl+C for local run.
 2. Disable network (airplane mode / unplug / turn off Wi-Fi).
