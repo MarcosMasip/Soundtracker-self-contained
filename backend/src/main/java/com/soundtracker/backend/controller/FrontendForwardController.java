@@ -27,8 +27,16 @@ public class FrontendForwardController {
 
     @GetMapping({"/app/react", "/app/react/"})
     public String reactRoot() {
-        // If React hasn't been built yet (no index.html), forwarding will still
-        // result in a 404 – which is acceptable and surfaces the missing build.
+        return "forward:/app/react/index.html";
+    }
+
+    // React deep-link forwarding: forward non-asset paths under /app/react to index.html
+    // This enables client-side routing (e.g., /app/react/movies/1001)
+    @GetMapping({
+            "/app/react/{path:^(?!static|favicon\\.ico|manifest\\.json|logo\\d+\\.png).*$}",
+            "/app/react/{path:^(?!static).*$}/{subpath:**}"
+    })
+    public String reactDeepLink() {
         return "forward:/app/react/index.html";
     }
 

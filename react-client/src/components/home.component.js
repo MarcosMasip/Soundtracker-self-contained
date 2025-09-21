@@ -6,9 +6,9 @@ const Home = () => {
     <div className="app-info">
       <img src="/clancy4.jpg" alt="App info" className="app-info-image" />
       <div className="app-info-text">
-        <h1>Добро пожаловать в <strong>Soundtracker</strong></h1>
-        <p>Soundtracker - это приложение, которое взаимодействует с Spotify API и Kinopoisk API с целью получения данных об
-          кино и музыке.</p>
+        <h1>Welcome to <strong>Soundtracker</strong></h1>
+        <p>Soundtracker is an application that integrates with the Spotify and Kinopoisk APIs to retrieve rich data about
+          movies and music.</p>
       </div>
     </div>
   );

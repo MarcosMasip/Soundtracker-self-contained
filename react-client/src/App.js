@@ -11,13 +11,14 @@ class App extends Component {
         return (
             <div>
                 <nav className="navbar navbar-expand navbar-dark bg-dark">
-                    <a href="/" className="navbar-brand">
+                    {/* Use Link so we stay inside /app/react without reloading root */}
+                    <Link to="/" className="navbar-brand">
                         Soundtracker
-                    </a>
+                    </Link>
                     <div className="navbar-nav mr-auto">
                         <li className="nav-item">
-                            <Link to={"/movies"} className="nav-link">
-                                movies
+                            <Link to={"/movies"} className="nav-link text-capitalize">
+                                Movies
                             </Link>
                         </li>
                     </div>

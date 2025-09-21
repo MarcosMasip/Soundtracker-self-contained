@@ -41,7 +41,7 @@ const MovieList = () => {
             <input
                 value={searchTerm}
                 onChange={handleSearchTermChange}
-                placeholder="Поиск по названию фильма"
+                placeholder="Search by movie title"
                 className="form-control mb-3"
             />
             <div className="grid">
@@ -54,8 +54,8 @@ const MovieList = () => {
                                 <p className="card-text">
                                     <small className="text-muted">{movie.releaseYear}</small>
                                 </p>
-                                <p className="card-text">{movie.length} минут</p>
-                                <p className="card-text">Жанры: {movie.genres.join(', ')}</p>
+                                <p className="card-text">{movie.length} min</p>
+                                <p className="card-text">Genres: {movie.genres.join(', ')}</p>
                             </div>
                         </Link>
                     </div>

@@ -39,10 +39,10 @@ const MovieDetails = () => {
                 <div className="col-md-6">
                     <h2>{movie.ruTitle}</h2>
                     <p>{movie.description}</p>
-                    <p><strong>Год производства:</strong> {movie.releaseYear}</p>
-                    <p><strong>Продолжительность:</strong> {movie.length} минут</p>
-                    <p><strong>Жанры:</strong> {movie.genres.map(genre => genre.name).join(', ')}</p>
-                    <p><strong>Режиссеры:</strong> {movie.directors.map((director, index) => (
+                    <p><strong>Year:</strong> {movie.releaseYear}</p>
+                    <p><strong>Duration:</strong> {movie.length} min</p>
+                    <p><strong>Genres:</strong> {movie.genres.map(genre => genre.name).join(', ')}</p>
+                    <p><strong>Directors:</strong> {movie.directors.map((director, index) => (
                         <span
                             key={index}
                             onMouseEnter={() => setHoveredDirector(director)}
@@ -54,7 +54,7 @@ const MovieDetails = () => {
                                 <img className="hover-image" src={director.photo} alt="Director"/>}
             </span>
                     )).reduce((prev, curr, index) => [prev, ', ', curr])}</p>
-                    <p><strong>Актеры:</strong> {movie.actors.map((actor, index) => (
+                    <p><strong>Actors:</strong> {movie.actors.map((actor, index) => (
                         <span
                             key={index}
                             onMouseEnter={() => setHoveredActor(actor)}
